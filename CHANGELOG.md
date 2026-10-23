@@ -14,7 +14,8 @@
 
 ## v1.0.3　2026-10-23
 
-- 社群分享圖的危老那一格改成老公寓的圖（fig 檔 media/og-home-v4.webp）。頁面內容與數字不變。
+- 社群分享圖的危老那一格改成老公寓的圖（fig 檔 media/og-home-v4.webp）。
+- 頁面的樣式與程式改放在 site/ 資料夾（home.css、home-main.js、home-3d.js、home-day.js），由頁面讀取，內容沒有改。頁面文字與數字不變。
 
 ## v1.0.2　2026-10-23
 

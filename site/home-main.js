@@ -7,7 +7,7 @@ const QN={1:'種樹',2:'垃圾桶',3:'鼠患',4:'內湖塞車',5:'公車',6:'危
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=s=>document.querySelector(s);
 const URLS={1:'https://yojuhsu.com/2026-taipei-debug-trees',2:'https://yojuhsu.com/2026-taipei-debug-bins',3:'https://yojuhsu.com/2026-taipei-debug-rats',5:'https://yojuhsu.com/2026-taipei-debug-bus',6:'https://yojuhsu.com/2026-taipei-debug-aging'};
-const KEY={1:r=>r.q1.short,3:r=>r.q3.in58,5:r=>r.q5.cls==='到不了八成',6:r=>r.q6.top33};
+const KEY={1:r=>r.q1.short,3:r=>r.q3.in58,5:r=>r.q5.cls==='交通不便',6:r=>r.q6.top33};
 const LISTS=[1,3,5,6];
 const smooth=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 let D,BY={},NAMES={},SEL=null,Q4=null,resolveReady;
@@ -140,7 +140,7 @@ function facts(r){
   const c3=[]; if(r.q3.in58) c3.push([T('chip3')]); if(r.q3.in21) c3.push([T('chip3b'),'sub']);
   out.push([3,T('r3',{e:fmt(r.q3.eat_km2),s:r.q3.stops_per_1k}),c3]);
   out.push([4,(Q4&&Q4.li&&Q4.li[r.c])||(r.q4.neihu?T('r4a'):T('r4b')),[]]);
-  const c5=[]; if(r.q5.cls==='到不了八成'){c5.push([T('chip5')]); if(r.q5.cause) c5.push([r.q5.cause,'sub']);}
+  const c5=[]; if(r.q5.cls==='交通不便'){c5.push([T('chip5')]); if(r.q5.cause) c5.push([r.q5.cause,'sub']);}
   out.push([5,T('r5',{c:r.q5.cls}),c5]);
   const c6=[]; if(r.q6.top33) c6.push([T('chip6')]); if(r.q6.pri) c6.push([T('chip6b'),'sub']);
   out.push([6,T('r6',{b:r.q6.B,p:r.q6.P}),c6]);

@@ -6,7 +6,7 @@ const wan=n=>(n/10000).toFixed(1);
 const QN={1:'種樹',2:'垃圾桶',3:'鼠患',4:'內湖塞車',5:'公車',6:'危老'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=s=>document.querySelector(s);
-const URLS={1:'https://yojuhsu.com/2026-taipei-debug-trees',2:'https://yojuhsu.com/2026-taipei-debug-bins',3:'https://yojuhsu.com/2026-taipei-debug-rats',5:'https://yojuhsu.com/2026-taipei-debug-bus',6:'https://yojuhsu.com/2026-taipei-debug-aging'};
+const URLS={1:'https://yojuhsu.com/2026-taipei-debug-trees',2:'https://yojuhsu.com/2026-taipei-debug-bins',3:'https://yojuhsu.com/2026-taipei-debug-rats',4:'https://yojuhsu.com/2026-taipei-debug-traffic',5:'https://yojuhsu.com/2026-taipei-debug-bus',6:'https://yojuhsu.com/2026-taipei-debug-aging'};
 const KEY={1:r=>r.q1.short,3:r=>r.q3.in58,5:r=>r.q5.cls==='交通不便',6:r=>r.q6.top33};
 const LISTS=[1,3,5,6];
 const smooth=!matchMedia('(prefers-reduced-motion: reduce)').matches;

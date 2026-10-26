@@ -19,7 +19,7 @@ const RECAP_CSS = `.recap{background:#fbf9f3;color:#1d1b17;border-top:3px solid 
 function mountRecap(place, esc) {
   const st = document.createElement('style'); st.textContent = RECAP_CSS; document.head.appendChild(st);
   const el = document.createElement('section'); el.className = 'recap'; el.id = 'recap';
-  el.innerHTML = `<div class="rc-in"><p class="rc-k">${esc(RC.tag)}</p><div class="rc-body"></div>${window.RECAP_URL ? `<p><a class="dy-link" href="${window.RECAP_URL}">${esc(RC.link)} →</a></p>` : ''}<p class="rc-note">${esc(RC.note)}</p></div>`;
+  el.innerHTML = `<div class="rc-in"><p class="rc-k">${esc(RC.tag)}</p><div class="rc-body"></div>${window.RECAP_URL ? `<p><a class="dy-link" href="${window.RECAP_URL}">${esc(RC.link)} →</a></p>` : ''}${(window.MORE_LINKS || []).map(l => `<p><a class="dy-link" href="${l.url}">${esc(l.text)} →</a></p>`).join('')}<p class="rc-note">${esc(RC.note)}</p></div>`;
   place(el);
   fetch(window.DATA_BASE + 'recap.html').then(r => r.ok ? r.text() : '').then(h => { el.querySelector('.rc-body').innerHTML = h; }).catch(() => {});
   return el;

@@ -316,7 +316,8 @@ function frame(now) {
 }
 
 let pickR = null;
-function showLi(r) { pickR = r; $('dyIn').value = r.d + ' ' + r.n; $('dyPicks').innerHTML = ''; $('dyRes').textContent = relLine(r); $('dyNote').hidden = false; $('dyDl').disabled = false; }
+function showLi(r, keep) { pickR = r; if (!keep) $('dyIn').value = r.d + ' ' + r.n;   // keep：邊打邊找時不改寫輸入框，免得讀者接著打字變成「松山區 中正里里」
+  $('dyPicks').innerHTML = ''; $('dyRes').textContent = relLine(r); $('dyNote').hidden = false; $('dyDl').disabled = false; }
 function relLine(r) { const ls = S.listsOf(r), m = D.meta, f = (t, o) => t.replace(/\{(\w)\}/g, (_, k) => o[k]);
   if (ls.length === 0) return f(TXT.rel0, { n: fmt(m.n_lists['0']) });
   if (ls.length === 1) return f(TXT.rel1, { a: NAME[ls[0]], n: fmt(m.n_lists['1']) });
@@ -326,10 +327,12 @@ function findLi() { const v = $('dyIn').value.trim().replace(/\s+/g, ' '); $('dy
   const nm = v.split(' ').pop(), hits = D.li.filter(r => r.n === nm || r.n === nm + '里');
   if (hits.length === 1) return showLi(hits[0]);
   if (hits.length > 1) { $('dyNote').hidden = true; $('dyRes').textContent = TXT.pick; $('dyPicks').innerHTML = hits.map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; }
+  { const k = nm.replace(/里+$/, ''); let c = k ? D.li.filter(r => r.n.includes(k)) : []; if (!c.length && k) c = D.li.filter(r => r.d.startsWith(k));   // 按 Enter 時打的是區名或一部分：留著候選，不說找不到
+    if (c.length) { pickR = null; $('dyNote').hidden = true; $('dyRes').textContent = ''; $('dyDl').disabled = true; $('dyPicks').innerHTML = c.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; } }
   $('dyNote').hidden = true; $('dyRes').textContent = TXT.notfound; }
 function suggest(e) { if (e && e.isComposing) return; const v = $('dyIn').value.trim().replace(/\s+/g, ' '); if (!v) { $('dyPicks').innerHTML = ''; return; }
-  const full = D.li.find(r => r.d + ' ' + r.n === v || r.d + r.n === v.replace(/ /g, '')); if (full) return showLi(full);
-  const nm = v.split(' ').pop().replace(/里$/, ''); if (!nm) return; const exact = D.li.filter(r => r.n === nm + '里'); if (exact.length === 1) return showLi(exact[0]);
+  const full = D.li.find(r => r.d + ' ' + r.n === v || r.d + r.n === v.replace(/ /g, '')); if (full) return showLi(full, true);
+  const nm = v.split(' ').pop().replace(/里+$/, ''); if (!nm) return; const exact = D.li.filter(r => r.n === nm + '里'); if (exact.length === 1) return showLi(exact[0], true);
   let hits = D.li.filter(r => r.n.includes(nm)); if (!hits.length) hits = D.li.filter(r => r.d.startsWith(nm));   // 打里名的一部分，或打區名
   pickR = null; $('dyRes').textContent = ''; $('dyNote').hidden = true; $('dyDl').disabled = true;   // 還沒選定，不留上一個里的結果
   $('dyPicks').innerHTML = hits.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); }

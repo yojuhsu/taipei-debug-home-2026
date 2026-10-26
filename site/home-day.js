@@ -197,7 +197,7 @@ const root = document.createElement('div'); root.className = 'dy'; stage.appendC
 const ORDER = CHS.map(c => [c.k, c.at]);
 root.innerHTML = `<svg class="dy-svg" aria-hidden="true"><g id="dyLeads"></g><path class="dy-route" id="dyRoute"/><g id="dyPins"></g></svg>
 <div id="dyChars"></div><div id="dyLabs"></div><div id="dyBadges"></div>
-<div class="dy-top"><span class="dy-pill">${esc(TXT.brand)}</span><span class="dy-clockw"><button type="button" class="dy-pp" id="dyRecapBtn">${esc(TXT.recapBtn)}</button><button type="button" class="dy-pp" id="dyPP"></button><span class="dy-clock" id="dyClock">07:10</span></span>
+<div class="dy-top"><span class="dy-pill">${esc(TXT.brand)}</span><span class="dy-clockw">${window.FIND_ALWAYS ? `<button type="button" class="dy-pp" id="dyFindBtn">${esc(S.T('findl'))}</button>` : ''}<button type="button" class="dy-pp" id="dyRecapBtn">${esc(TXT.recapBtn)}</button><button type="button" class="dy-pp" id="dyPP"></button><span class="dy-clock" id="dyClock">07:10</span></span>
   <div class="dy-stamps" id="dyStamps">${ORDER.map(([k, at], i) => `<button type="button" class="dy-st" data-i="${i}"><b>${esc(NAME[k])}</b>${at}</button>`).join('')}<button type="button" class="dy-st" data-i="${RI}"><b>${esc(TXT.recapTag)}</b>22:40</button></div></div>
 <p class="dy-intro" id="dyIntro">${esc(TXT.intro)}</p>
 <section class="dy-rs off" id="dyRS" aria-live="polite"><span class="dy-tag">${esc(TXT.recapTag)}</span><div class="rs-t">${esc(RECAP.title)}</div>
@@ -327,13 +327,23 @@ function findLi() { const v = $('dyIn').value.trim().replace(/\s+/g, ' '); $('dy
   if (hits.length === 1) return showLi(hits[0]);
   if (hits.length > 1) { $('dyNote').hidden = true; $('dyRes').textContent = TXT.pick; $('dyPicks').innerHTML = hits.map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; }
   $('dyNote').hidden = true; $('dyRes').textContent = TXT.notfound; }
+function suggest(e) { if (e && e.isComposing) return; const v = $('dyIn').value.trim().replace(/\s+/g, ' '); if (!v) { $('dyPicks').innerHTML = ''; return; }
+  const full = D.li.find(r => r.d + ' ' + r.n === v || r.d + r.n === v.replace(/ /g, '')); if (full) return showLi(full);
+  const nm = v.split(' ').pop().replace(/里$/, ''); if (!nm) return; const exact = D.li.filter(r => r.n === nm + '里'); if (exact.length === 1) return showLi(exact[0]);
+  let hits = D.li.filter(r => r.n.includes(nm)); if (!hits.length) hits = D.li.filter(r => r.d.startsWith(nm));   // 打里名的一部分，或打區名
+  pickR = null; $('dyRes').textContent = ''; $('dyNote').hidden = true; $('dyDl').disabled = true;   // 還沒選定，不留上一個里的結果
+  $('dyPicks').innerHTML = hits.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); }
+$('dyIn').addEventListener('input', suggest); $('dyIn').addEventListener('compositionend', suggest);
+function openLi(r) { if (tt < T_END) { tt = T_END + 0.01; $('dyEnd').querySelector('.dy-tag').hidden = true; } if (r) showLi(r); }   // 地圖點里、頂端的找里鈕：直接到結尾；還沒看完就不寫「6 / 6 看完了」
+{ const on3d0 = S.on3d; S.on3d = (c, from3d) => { if (on3d0) on3d0(c, from3d); if (c && from3d && BY[c]) openLi(BY[c]); }; }
+if ($('dyFindBtn')) $('dyFindBtn').onclick = () => { openLi(null); setTimeout(() => $('dyIn').focus(), 400); };
 $('dyIn').addEventListener('change', findLi); $('dyIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findLi(); } });
 $('dyPicks').onclick = e => { const c = e.target.dataset && e.target.dataset.c; if (c) showLi(BY[c]); };
 function showCardImg(cv) { let box = $('dyCardBox'); if (!box) { box = document.createElement('div'); box.id = 'dyCardBox'; box.innerHTML = `<p class="dy-line">${esc(TXT.hold)}</p><img id="dyCardImg" alt="" style="display:block;width:100%;border:2px solid #1d1b17">`; $('dyEnd').appendChild(box); } $('dyCardImg').src = cv.toDataURL('image/png'); box.scrollIntoView({ block: 'nearest' }); }
 if (ART) { $('dyShare').hidden = true; $('dyDl').textContent = TXT.showCard; }
 $('dyDl').onclick = () => { if (!pickR) return; if (ART) return showCardImg(S.drawCard(pickR)); S.drawCard(pickR).toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `${pickR.d}${pickR.n}_六題.png`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }, 'image/png'); };
 $('dyShare').onclick = async () => { const url = location.origin + location.pathname; try { if (navigator.share) await navigator.share({ title: TXT.brand, text: TXT.shareLine, url }); else { await navigator.clipboard.writeText(url); $('dyShare').textContent = TXT.copied; } } catch {} };
-$('dyAgain').onclick = () => { tt = 0; playing = true; userCam = false; setPP(); };
+$('dyAgain').onclick = () => { $('dyEnd').querySelector('.dy-tag').hidden = false; tt = 0; playing = true; userCam = false; setPP(); };
 const recap = mountRecap(el => document.getElementById('stagewrap').after(el), esc);
 const toRecap = () => recap.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
 $('dyRecapBtn').onclick = toRecap; $('dyRecapEnd').onclick = toRecap; $('dyRSBtn').onclick = toRecap;

@@ -95,12 +95,12 @@ function inst(geo, color, n, emissive) {
   const mat = new THREE.MeshLambertMaterial({ color, emissive: emissive || 0x000000 });
   const im = new THREE.InstancedMesh(geo, mat, n); im.count = 0; im.castShadow = !coarse; im.frustumCulled = false; scene.add(im); return im;
 }
-const busGeo = new THREE.BoxGeometry(9, 4.2, 3.6); busGeo.translate(0, 2.1, 0);
+const busGeo = new THREE.CylinderGeometry(2.6, 2.6, 2.2, 20); busGeo.translate(0, 1.1, 0);   // 公車：不轉向的扁圓點（Erica 10/27：黑色長條像蟑螂）
 const truckGeo = new THREE.BoxGeometry(7, 5, 5); truckGeo.translate(0, 2.5, 0);
 const bodyGeo = new THREE.CylinderGeometry(1.3, 1.6, 6, 6); bodyGeo.translate(0, 3, 0);
 const headGeo = new THREE.SphereGeometry(1.5, 8, 6); headGeo.translate(0, 7.4, 0);
 const cupGeo = new THREE.CylinderGeometry(0.8, 0.6, 2.2, 6); cupGeo.translate(2, 4.6, 0);
-const buses = inst(busGeo, 0x1d1b17, 2400);
+const buses = inst(busGeo, 0x3e5468, 2400);
 const trucks = inst(truckGeo, 0x3d7a4d, 4010);
 const people = [inst(bodyGeo, 0x1d1b17, 2000), inst(headGeo, 0x1d1b17, 2000), inst(cupGeo, 0xffffff, 2000)];
 const pin = new THREE.Group();
@@ -153,7 +153,7 @@ function placeBuses() {
   const A = SN[k], B = SN[Math.min(k + 1, SN.length - 1)];
   const f = B.t > A.t ? Math.min(1, Math.max(0, (tb - A.t) / (B.t - A.t))) : 0;
   let n = 0;
-  const put = (x, y, vi, ang) => { tmp.position.set(wx(x), heightOf(vi), wz(y)); tmp.rotation.set(0, ang, 0); tmp.scale.setScalar(VS); tmp.updateMatrix(); buses.setMatrixAt(n++, tmp.matrix); };
+  const put = (x, y, vi, ang) => { tmp.position.set(wx(x), heightOf(vi), wz(y)); tmp.rotation.set(0, 0, 0); tmp.scale.setScalar(VS); tmp.updateMatrix(); buses.setMatrixAt(n++, tmp.matrix); };
   for (const [id, a] of A.mp) {
     const b = B.mp.get(id);
     if (b) { const x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f; put(x, y, f < 0.5 ? a[2] : b[2], Math.atan2(-(b[1] - a[1]), b[0] - a[0])); }
@@ -212,7 +212,7 @@ function captions() {
   if (MODE === 6) c1 = `${T('cap6l')}　${T('capp', { p: fmt(L['6'].pop) })}；${T('c6b')}`;
   $('#cap1').textContent = c1;
   const sw = c => `<span class="sw" style="background:${c}"></span>`;
-  let c2 = busInfo ? sw('#1d1b17') + S.esc(T('bus', { n: fmt(busInfo.n), d: busInfo.label })) : S.esc(T('busno'));
+  let c2 = busInfo ? sw('#3e5468') + S.esc(T('bus', { n: fmt(busInfo.n), d: busInfo.label })) : S.esc(T('busno'));
   if (MODE !== 3 && truckN) c2 += '　' + sw('#3d7a4d') + S.esc(T('trk', { n: fmt(truckN) }));
   $('#cap2').innerHTML = c2;
 }

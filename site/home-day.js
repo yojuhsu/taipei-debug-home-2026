@@ -140,6 +140,15 @@ const css = document.createElement('style'); css.textContent = `
 .dy-in{width:100%;font:inherit;font-size:18px;padding:9px 11px;border:2px solid #1d1b17;background:#fff;color:#1d1b17;border-radius:0}
 .dy-res{margin:10px 0 0;font-size:15px;line-height:1.6;font-weight:700;min-height:1em}
 .dy-note{margin:6px 0 0;font-size:12.5px;line-height:1.55;color:#6b665d}
+.dy-facts{margin:10px 0 0;border-top:2px solid #1d1b17}
+.dy-facts summary{cursor:pointer;font-weight:800;font-size:15px;padding:8px 0}
+.dy-facts summary small{font-weight:400;color:#6b665d;margin-left:6px}
+.dy-facts ul{list-style:none;margin:0;padding:0}
+.dy-facts li{padding:8px 0;border-top:1px solid #d6d0c4;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+.dy-facts li b{display:block;color:#b5452c;font-size:12px;letter-spacing:.04em}
+.dy-facts li .t{display:block;font-weight:700}
+.dy-facts .chip{display:inline-block;margin:4px 6px 0 0;padding:1px 7px;font-size:12px;font-weight:700;background:#b5452c;color:#fff}
+.dy-facts .chip.sub{background:none;color:#b5452c;border:1px solid #b5452c}
 .dy-intro{position:absolute;left:16px;right:16px;bottom:20px;margin:0 auto;max-width:560px;background:#fffdf8;border:2px solid #1d1b17;box-shadow:4px 4px 0 #1d1b17;padding:10px 14px;font-size:16px;line-height:1.65;font-weight:700;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;pointer-events:none}
 .dy-intro.on{opacity:1;transform:none}
 .dy-picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -208,7 +217,7 @@ root.innerHTML = `<svg class="dy-svg" aria-hidden="true"><g id="dyLeads"></g><pa
 <section class="dy-card off" id="dyCard" aria-live="polite"></section>
 <section class="dy-end off" id="dyEnd"><span class="dy-tag">${esc(TXT.done)}</span><div class="q">${esc(TXT.endQ)}</div>
   <input class="dy-in" id="dyIn" list="dyLis" autocomplete="off" enterkeyhint="search" placeholder="${esc(TXT.ph)}"><datalist id="dyLis"></datalist>
-  <div class="dy-picks" id="dyPicks"></div><p class="dy-res" id="dyRes"></p><p class="dy-note" id="dyNote" hidden>${esc(S.T('note'))}</p>
+  <div class="dy-picks" id="dyPicks"></div><p class="dy-res" id="dyRes"></p><p class="dy-note" id="dyNote" hidden>${esc(S.T('note'))}</p><details class="dy-facts" id="dyFacts" open hidden><summary id="dyFactsS"></summary><ul id="dyFactsL"></ul></details>
   <div class="dy-acts"><button type="button" class="pri" id="dyDl" disabled>${esc(TXT.dl)}</button><button type="button" id="dyShare">${esc(TXT.share)}</button><button type="button" id="dyAgain">${esc(TXT.again)}</button><button type="button" id="dyRecapEnd">${esc(TXT.recapRead)}</button></div>
   <p class="dy-line">${esc(TXT.shareLine)}</p></section>`;
 const $ = id => document.getElementById(id);
@@ -317,7 +326,12 @@ function frame(now) {
 
 let pickR = null;
 function showLi(r, keep) { pickR = r; if (!keep) $('dyIn').value = r.d + ' ' + r.n;   // keep：邊打邊找時不改寫輸入框，免得讀者接著打字變成「松山區 中正里里」
-  $('dyPicks').innerHTML = ''; $('dyRes').textContent = relLine(r); $('dyNote').hidden = false; $('dyDl').disabled = false; }
+  $('dyPicks').innerHTML = ''; $('dyRes').textContent = relLine(r); $('dyNote').hidden = false; $('dyDl').disabled = false; showFacts(r); }
+function showFacts(r) {   // 狀況卡：跟下載的圖卡同一份內容（S.facts），選到里就展開，點標題可收合；沒有新寫字
+  const box = $('dyFacts'); if (!r) { box.hidden = true; return; }
+  $('dyFactsS').innerHTML = `${esc(r.d + ' ' + r.n)}<small>${esc(S.T('pop', { p: fmt(r.pop) }))}</small>`;
+  $('dyFactsL').innerHTML = S.facts(r).map(([n, v, ch]) => `<li><b>${esc(NAME[n])}</b><span class="t">${esc(D.meta.titles[n])}</span>${esc(v)}${ch.length ? '<br>' + ch.map(([c, cls]) => `<span class="chip${cls ? ' ' + cls : ''}">${esc(c)}</span>`).join('') : ''}</li>`).join('');
+  box.open = true; box.hidden = false; }
 function relLine(r) { const ls = S.listsOf(r), m = D.meta, f = (t, o) => t.replace(/\{(\w)\}/g, (_, k) => o[k]);
   if (ls.length === 0) return f(TXT.rel0, { n: fmt(m.n_lists['0']) });
   if (ls.length === 1) return f(TXT.rel1, { a: NAME[ls[0]], n: fmt(m.n_lists['1']) });
@@ -326,15 +340,15 @@ function findLi() { const v = $('dyIn').value.trim().replace(/\s+/g, ' '); $('dy
   const full = D.li.find(r => r.d + ' ' + r.n === v || r.d + r.n === v.replace(/ /g, '')); if (full) return showLi(full);
   const nm = v.split(' ').pop(), hits = D.li.filter(r => r.n === nm || r.n === nm + '里');
   if (hits.length === 1) return showLi(hits[0]);
-  if (hits.length > 1) { $('dyNote').hidden = true; $('dyRes').textContent = TXT.pick; $('dyPicks').innerHTML = hits.map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; }
+  if (hits.length > 1) { showFacts(null); $('dyNote').hidden = true; $('dyRes').textContent = TXT.pick; $('dyPicks').innerHTML = hits.map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; }
   { const k = nm.replace(/里+$/, ''); let c = k ? D.li.filter(r => r.n.includes(k)) : []; if (!c.length && k) c = D.li.filter(r => r.d.startsWith(k));   // 按 Enter 時打的是區名或一部分：留著候選，不說找不到
-    if (c.length) { pickR = null; $('dyNote').hidden = true; $('dyRes').textContent = ''; $('dyDl').disabled = true; $('dyPicks').innerHTML = c.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; } }
-  $('dyNote').hidden = true; $('dyRes').textContent = TXT.notfound; }
+    if (c.length) { pickR = null; showFacts(null); $('dyNote').hidden = true; $('dyRes').textContent = ''; $('dyDl').disabled = true; $('dyPicks').innerHTML = c.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); return; } }
+  showFacts(null); $('dyNote').hidden = true; $('dyRes').textContent = TXT.notfound; }
 function suggest(e) { if (e && e.isComposing) return; const v = $('dyIn').value.trim().replace(/\s+/g, ' '); if (!v) { $('dyPicks').innerHTML = ''; return; }
   const full = D.li.find(r => r.d + ' ' + r.n === v || r.d + r.n === v.replace(/ /g, '')); if (full) return showLi(full, true);
   const nm = v.split(' ').pop().replace(/里+$/, ''); if (!nm) return; const exact = D.li.filter(r => r.n === nm + '里'); if (exact.length === 1) return showLi(exact[0], true);
   let hits = D.li.filter(r => r.n.includes(nm)); if (!hits.length) hits = D.li.filter(r => r.d.startsWith(nm));   // 打里名的一部分，或打區名
-  pickR = null; $('dyRes').textContent = ''; $('dyNote').hidden = true; $('dyDl').disabled = true;   // 還沒選定，不留上一個里的結果
+  pickR = null; $('dyRes').textContent = ''; $('dyNote').hidden = true; $('dyDl').disabled = true; showFacts(null);   // 還沒選定，不留上一個里的結果
   $('dyPicks').innerHTML = hits.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); }
 $('dyIn').addEventListener('input', suggest); $('dyIn').addEventListener('compositionend', suggest);
 function openLi(r) { if (tt < T_END) { tt = T_END + 0.01; $('dyEnd').querySelector('.dy-tag').hidden = true; } if (r) showLi(r); }   // 地圖點里、頂端的找里鈕：直接到結尾；還沒看完就不寫「6 / 6 看完了」

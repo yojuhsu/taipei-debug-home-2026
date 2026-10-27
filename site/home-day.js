@@ -141,6 +141,7 @@ const css = document.createElement('style'); css.textContent = `
 .dy-res{margin:10px 0 0;font-size:15px;line-height:1.6;font-weight:700;min-height:1em}
 .dy-note{margin:6px 0 0;font-size:12.5px;line-height:1.55;color:#6b665d}
 .dy-facts{margin:10px 0 0;border-top:2px solid #1d1b17}
+@media(max-width:899px){.dy.facts-on #dyBadges,.dy.facts-on #dyLeads{display:none}}
 .dy-facts summary{cursor:pointer;font-weight:800;font-size:15px;padding:8px 0}
 .dy-facts summary small{font-weight:400;color:#6b665d;margin-left:6px}
 .dy-facts ul{list-style:none;margin:0;padding:0}
@@ -328,7 +329,7 @@ let pickR = null;
 function showLi(r, keep) { pickR = r; if (!keep) $('dyIn').value = r.d + ' ' + r.n;   // keep：邊打邊找時不改寫輸入框，免得讀者接著打字變成「松山區 中正里里」
   $('dyPicks').innerHTML = ''; $('dyRes').textContent = relLine(r); $('dyNote').hidden = false; $('dyDl').disabled = false; showFacts(r); }
 function showFacts(r) {   // 狀況卡：跟下載的圖卡同一份內容（S.facts），選到里就展開，點標題可收合；沒有新寫字
-  const box = $('dyFacts'); if (!r) { box.hidden = true; return; }
+  const box = $('dyFacts'); root.classList.toggle('facts-on', !!r); if (!r) { box.hidden = true; return; }   // 狀況卡打開時，手機上收掉地圖的交會標，免得疊在面板上緣
   $('dyFactsS').innerHTML = `${esc(r.d + ' ' + r.n)}<small>${esc(S.T('pop', { p: fmt(r.pop) }))}</small>`;
   $('dyFactsL').innerHTML = S.facts(r).map(([n, v, ch]) => `<li><b>${esc(NAME[n])}</b><span class="t">${esc(D.meta.titles[n])}</span>${esc(v)}${ch.length ? '<br>' + ch.map(([c, cls]) => `<span class="chip${cls ? ' ' + cls : ''}">${esc(c)}</span>`).join('') : ''}</li>`).join('');
   box.open = true; box.hidden = false; }
@@ -351,7 +352,7 @@ function suggest(e) { if (e && e.isComposing) return; const v = $('dyIn').value.
   pickR = null; $('dyRes').textContent = ''; $('dyNote').hidden = true; $('dyDl').disabled = true; showFacts(null);   // 還沒選定，不留上一個里的結果
   $('dyPicks').innerHTML = hits.slice(0, 8).map(r => `<button type="button" data-c="${r.c}">${esc(r.d + ' ' + r.n)}</button>`).join(''); }
 $('dyIn').addEventListener('input', suggest); $('dyIn').addEventListener('compositionend', suggest);
-function openLi(r) { if (tt < T_END) { tt = T_END + 0.01; $('dyEnd').querySelector('.dy-tag').hidden = true; } if (r) showLi(r); }   // 地圖點里、頂端的找里鈕：直接到結尾；還沒看完就不寫「6 / 6 看完了」
+function openLi(r) { if (tt < T_END) { tt = T_END + 0.01; $('dyEnd').querySelector('.dy-tag').hidden = true; } $('dyIntro').classList.remove('on'); if (ci !== EI) enter(EI); if (r) showLi(r); }   // 當下就切到結尾，不等下一格（手機慢的時候開場那句不會殘留）   // 地圖點里、頂端的找里鈕：直接到結尾；還沒看完就不寫「6 / 6 看完了」
 { const on3d0 = S.on3d; S.on3d = (c, from3d) => { if (on3d0) on3d0(c, from3d); if (c && from3d && BY[c]) openLi(BY[c]); }; }
 if ($('dyFindBtn')) $('dyFindBtn').onclick = () => { openLi(null); setTimeout(() => $('dyIn').focus(), 400); };
 $('dyIn').addEventListener('change', findLi); $('dyIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findLi(); } });
@@ -360,7 +361,7 @@ function showCardImg(cv) { let box = $('dyCardBox'); if (!box) { box = document.
 if (ART) { $('dyShare').hidden = true; $('dyDl').textContent = TXT.showCard; }
 $('dyDl').onclick = () => { if (!pickR) return; if (ART) return showCardImg(S.drawCard(pickR)); S.drawCard(pickR).toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `${pickR.d}${pickR.n}_六題.png`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }, 'image/png'); };
 $('dyShare').onclick = async () => { const url = location.origin + location.pathname; try { if (navigator.share) await navigator.share({ title: TXT.brand, text: TXT.shareLine, url }); else { await navigator.clipboard.writeText(url); $('dyShare').textContent = TXT.copied; } } catch {} };
-$('dyAgain').onclick = () => { $('dyEnd').querySelector('.dy-tag').hidden = false; tt = 0; playing = true; userCam = false; setPP(); };
+$('dyAgain').onclick = () => { root.classList.remove('facts-on'); $('dyEnd').querySelector('.dy-tag').hidden = false; tt = 0; playing = true; userCam = false; setPP(); };
 const recap = mountRecap(el => document.getElementById('stagewrap').after(el), esc);
 const toRecap = () => recap.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
 $('dyRecapBtn').onclick = toRecap; $('dyRecapEnd').onclick = toRecap; $('dyRSBtn').onclick = toRecap;

@@ -4,6 +4,26 @@ const TX = []; window.__dayTexts = TX;
 const V = (k, s) => (TX.push([k, s]), s), N = s => (TX.push([0, s]), s);
 
 const RC = { tag: N('回顧'), link: N('到部落格讀這篇'), note: N('個人作品，不是臺北市政府或活動主辦單位的網站。') };
+// 電子報：標題與說明照抄「關於我」頁（yojuhsu.com/about），表單用 beehiiv 嵌入，不跳站；頁面上不放訂閱人數
+const NL = { h: N('想收到新文章通知？'), p: N('我每兩週發一封電子報，比部落格多一層的思考過程。訂閱免費，隨時可以取消。'),
+  form: 'https://subscribe-forms.beehiiv.com/48b24ccb-ba57-4bd3-a5d2-798df4ee8dd8' };
+const utm = (u, where) => { try { const x = new URL(u); if (!x.searchParams.has('utm_source')) { x.searchParams.set('utm_source', 'yojuhsu'); x.searchParams.set('utm_medium', 'overview'); x.searchParams.set('utm_content', where); } return x.href; } catch (e) { return u; } };
+
+// 統計（GA4）：只送「點了哪一題的完整頁面、在哪個版位」。不送里別、不送輸入框內容、不送狀況卡內容。
+// ?noga=1 之後整個 session 不送（page_view 要在後台頁 head 擋，這裡再擋一次事件）；沒有 gtag 就安靜跳過
+const GA_ID = 'G-FNJK50SKQ2';
+const NOGA = (() => { const on = new URLSearchParams(location.search).get('noga') === '1'; try { if (on) sessionStorage.setItem('noga', '1'); return on || sessionStorage.getItem('noga') === '1'; } catch (e) { return on; } })();
+if (NOGA) window['ga-disable-' + GA_ID] = true;
+const TOPIC = { trees: '種樹', bins: '垃圾桶', rats: '鼠患', traffic: '內湖塞車', bus: '公車', aging: '危老' };
+const POS = [['#dyCard', 'card_top'], ['#recap', 'recap'], ['#nl', 'newsletter'], ['#dyEnd', 'end'], ['#dyRS', 'recap_stage'], ['.yjh-corner,footer', 'footer']];
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a || NOGA || typeof window.gtag !== 'function') return;
+  const m = /\/2026-taipei-debug-(trees|bins|rats|traffic|bus|aging)(?:[-/?#]|$)/.exec(a.href); if (!m) return;
+  const pos = (POS.find(([q]) => a.closest(q)) || [, 'other'])[1];
+  try { window.gtag('event', 'topic_click', { topic: TOPIC[m[1]], position: pos }); } catch (err) {}
+}, true);
+// 頁尾「訂閱電子報」小字加 UTM（後台頁的連結，這裡補參數）
+document.querySelectorAll('.yjh-corner a[href*="beehiiv.com"]').forEach(a => { a.href = utm(a.href, 'corner'); });
 const RECAP_CSS = `.recap{background:#fbf9f3;color:#1d1b17;border-top:3px solid #1d1b17;padding-inline:16px;padding-block:40px 72px}
 .recap .rc-in{max-width:680px;margin:0 auto;font-size:17px;line-height:1.85}
 .recap .rc-k{display:inline-block;margin:0;background:#b5452c;color:#fff;font-size:13px;font-weight:800;padding:2px 9px;letter-spacing:.06em}
@@ -15,12 +35,22 @@ const RECAP_CSS = `.recap{background:#fbf9f3;color:#1d1b17;border-top:3px solid 
 .recap ul,.recap ol{margin:0 0 16px;padding-left:1.4em}
 .recap li{margin:0 0 6px}
 .recap .dy-link{display:inline-block;margin-top:8px;color:#1d1b17;font-weight:700;font-size:14px;text-underline-offset:3px}
-.recap .rc-note{margin:36px 0 0;padding-top:14px;border-top:1px solid #d6d0c4;font-size:13px;line-height:1.6;color:#6b665c}`;
+.recap .rc-note{margin:36px 0 0;padding-top:14px;border-top:1px solid #d6d0c4;font-size:13px;line-height:1.6;color:#6b665c}
+.recap .rc-pv{margin-top:8px;padding-top:0;border-top:0}
+.nl{background:#fbf9f3;color:#1d1b17;border-top:3px solid #1d1b17;padding-inline:16px;padding-block:40px 24px}
+.nl .rc-in{max-width:680px;margin:0 auto;font-size:17px;line-height:1.85}
+.nl h2{font-size:clamp(22px,4.6vw,28px);line-height:1.35;margin:0 0 10px;text-wrap:balance}
+.nl p{margin:0 0 12px}
+.nl iframe{display:block;width:100%;max-width:100%;height:400px;margin:0;border:0;background:transparent}`;
 function mountRecap(place, esc) {
   const st = document.createElement('style'); st.textContent = RECAP_CSS; document.head.appendChild(st);
+  const nl = document.createElement('section'); nl.className = 'nl'; nl.id = 'nl';
+  nl.innerHTML = `<div class="rc-in"><h2>${esc(NL.h)}</h2><p>${esc(NL.p)}</p><iframe class="beehiiv-embed" title="${esc(NL.h)}" src="${utm(NL.form, 'embed_before_recap')}" frameborder="0" scrolling="no" loading="lazy"></iframe></div>`;
+  const pv = window.SIX && window.SIX.T ? window.SIX.T('privacy') : '';
   const el = document.createElement('section'); el.className = 'recap'; el.id = 'recap';
-  el.innerHTML = `<div class="rc-in"><p class="rc-k">${esc(RC.tag)}</p><div class="rc-body"></div>${window.RECAP_URL ? `<p><a class="dy-link" href="${window.RECAP_URL}">${esc(RC.link)} →</a></p>` : ''}${(window.MORE_LINKS || []).map(l => `<p><a class="dy-link" href="${l.url}">${esc(l.text)} →</a></p>`).join('')}<p class="rc-note">${esc(RC.note)}</p></div>`;
-  place(el);
+  el.innerHTML = `<div class="rc-in"><p class="rc-k">${esc(RC.tag)}</p><div class="rc-body"></div>${window.RECAP_URL ? `<p><a class="dy-link" href="${window.RECAP_URL}">${esc(RC.link)} →</a></p>` : ''}${(window.MORE_LINKS || []).map(l => `<p><a class="dy-link" href="${l.url}">${esc(l.text)} →</a></p>`).join('')}<p class="rc-note">${esc(RC.note)}</p>${pv ? `<p class="rc-note rc-pv">${esc(pv)}</p>` : ''}</div>`;
+  place(el); el.before(nl);
+  if (!document.querySelector('script[src*="subscribe-forms.beehiiv.com/embed.js"]')) { const sc = document.createElement('script'); sc.async = true; sc.src = 'https://subscribe-forms.beehiiv.com/embed.js'; document.head.appendChild(sc); }
   fetch(window.DATA_BASE + 'recap.html').then(r => r.ok ? r.text() : '').then(h => { el.querySelector('.rc-body').innerHTML = h; }).catch(() => {});
   return el;
 }
@@ -131,6 +161,7 @@ const css = document.createElement('style'); css.textContent = `
 .dy-rev .g{display:inline-block;margin-top:4px;background:#b5452c;color:#fff;font-weight:700;padding:0 6px}
 .dy-rel{margin-top:10px;border:2px dashed #1d1b17;padding:7px 10px;font-weight:700;font-size:14px;line-height:1.5}
 .dy-link{display:inline-block;margin-top:8px;color:#1d1b17;font-weight:700;font-size:14px;text-underline-offset:3px}
+.dy-link-top{margin:6px 0 8px}
 .dy-end .q{font-size:21px;font-weight:800;line-height:1.4;margin:8px 0 10px}
 .dy-opts{display:grid;gap:8px}
 .dy-opt{font:inherit;font-size:17px;font-weight:700;text-align:left;padding:10px 12px;border:2px solid #1d1b17;background:#fff;color:#1d1b17;cursor:pointer}
@@ -257,8 +288,9 @@ function cardHTML(c) {
     + (c.hl ? `<div class="dy-hl"><b>${esc(c.hl[0])}</b>${c.hl[1] ? `<span>${esc(c.hl[1])}</span>` : ''}</div>` : '');
   const rev = c.reveal ? `<div class="dy-rev">${esc(c.reveal)}</div>` : '';
   return `<div class="dy-prog"><i id="dyProg"></i></div><div><span class="dy-tag">${esc(NAME[c.k])}</span><span class="dy-ct">${esc(D.meta.titles[c.k])}</span></div>
+  <a class="dy-link dy-link-top" href="${PAGE[c.k]}" target="_blank" rel="noopener">${esc(TXT.link)} →</a>
   <div class="dy-media" id="dyMedia"><video id="dyVid" src="${c.v}" poster="${c.poster}" muted playsinline autoplay loop preload="auto" aria-label="${esc(TXT.play)}"></video><button type="button" class="dy-snd" id="dyPlay">${esc(TXT.sound)}</button></div>
-  ${rev}<ul class="dy-rows">${rows}</ul>${stat}<div class="dy-rel">${esc(c.rel)}</div><a class="dy-link" href="${PAGE[c.k]}" target="_blank" rel="noopener">${esc(TXT.link)} →</a>`;
+  ${rev}<ul class="dy-rows">${rows}</ul>${stat}<div class="dy-rel">${esc(c.rel)}</div>`;
 }
 function showCard(i) { const card = $('dyCard'), c = CHS[i]; card.innerHTML = cardHTML(c); card.scrollTop = 0;
 

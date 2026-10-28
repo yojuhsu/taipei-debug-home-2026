@@ -15,13 +15,12 @@ const utm = (u, where) => { try { const x = new URL(u); if (!x.searchParams.has(
 const GA_ID = 'G-FNJK50SKQ2';
 const NOGA = (() => { const on = new URLSearchParams(location.search).get('noga') === '1'; try { if (on) sessionStorage.setItem('noga', '1'); return on || sessionStorage.getItem('noga') === '1'; } catch (e) { return on; } })();
 if (NOGA) window['ga-disable-' + GA_ID] = true;
-const TOPIC = { trees: '種樹', bins: '垃圾桶', rats: '鼠患', traffic: '內湖塞車', bus: '公車', aging: '危老' };
 const POS = [['#dyCard', 'card_top'], ['#recap', 'recap'], ['#nl', 'newsletter'], ['#dyEnd', 'end'], ['#dyRS', 'recap_stage'], ['.yjh-corner,footer', 'footer']];
 document.addEventListener('click', e => {
   const a = e.target.closest && e.target.closest('a[href]'); if (!a || NOGA || typeof window.gtag !== 'function') return;
   const m = /\/2026-taipei-debug-(trees|bins|rats|traffic|bus|aging)(?:[-/?#]|$)/.exec(a.href); if (!m) return;
   const pos = (POS.find(([q]) => a.closest(q)) || [, 'other'])[1];
-  try { window.gtag('event', 'topic_click', { topic: TOPIC[m[1]], position: pos }); } catch (err) {}
+  try { window.gtag('event', 'topic_click', { topic: m[1], position: pos }); } catch (err) {}   // topic 用網址的英文代號（trees、bins…），對得上庫裡 page_2026-taipei-debug-* 的 entity_id
 }, true);
 // 頁尾「訂閱電子報」小字加 UTM（後台頁的連結，這裡補參數）
 document.querySelectorAll('.yjh-corner a[href*="beehiiv.com"]').forEach(a => { a.href = utm(a.href, 'corner'); });
